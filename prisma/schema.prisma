@@ -1,0 +1,66 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Flock {
+  id            Int           @id @default(autoincrement())
+  name          String
+  totalChickens Int
+  isActive      Boolean       @default(true)
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  pickupDays    PickupDay[]
+  reservations  Reservation[]
+}
+
+model PickupDay {
+  id            Int        @id @default(autoincrement())
+  flockId       Int
+  pickupDate    DateTime
+  startTime     String
+  endTime       String
+  slotMinutes   Int        @default(15)
+  slotCapacity  Int
+  isPublished   Boolean    @default(false)
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+
+  flock         Flock       @relation(fields: [flockId], references: [id])
+  timeSlots     TimeSlot[]
+  reservations  Reservation[]
+}
+
+model TimeSlot {
+  id            Int           @id @default(autoincrement())
+  pickupDayId   Int
+  startTime     String
+  endTime       String
+  capacity      Int
+  createdAt     DateTime      @default(now())
+
+  pickupDay     PickupDay     @relation(fields: [pickupDayId], references: [id])
+  reservations  Reservation[]
+}
+
+model Reservation {
+  id            Int       @id @default(autoincrement())
+  flockId       Int
+  pickupDayId   Int
+  timeSlotId    Int
+  customerName  String
+  mobile        String
+  email         String?
+  quantity      Int
+  status        String    @default("reserved")
+  createdAt     DateTime  @default(now())
+
+  flock         Flock     @relation(fields: [flockId], references: [id])
+  pickupDay     PickupDay @relation(fields: [pickupDayId], references: [id])
+  timeSlot      TimeSlot  @relation(fields: [timeSlotId], references: [id])
+}
