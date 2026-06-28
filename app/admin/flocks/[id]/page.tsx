@@ -115,7 +115,13 @@ export default async function ManageFlockPage({
                       <p className="text-sm text-gray-600">
                         {day.timeSlots.length} time slots
                       </p>
-                    </div>
+                      
+ <Link
+  href={`/admin/flocks/${flock.id}/pickup-days/${day.id}`}
+  className="mt-3 inline-block rounded bg-green-800 px-4 py-2 text-sm font-bold text-white hover:bg-green-900"
+>
+  View Collection Screen
+</Link>
                   </div>
                 </div>
               );

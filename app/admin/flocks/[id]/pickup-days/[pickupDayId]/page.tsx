@@ -19,7 +19,10 @@ export default async function PickupDayPage({
         orderBy: { startTime: "asc" },
         include: {
           reservations: {
-            orderBy: { customerName: "asc" },
+            orderBy: [
+              { status: "asc" },
+              { customerName: "asc" },
+            ],
           },
         },
       },
@@ -28,22 +31,41 @@ export default async function PickupDayPage({
 
   if (!pickupDay) notFound();
 
+  const allReservations = pickupDay.timeSlots.flatMap(
+    (slot) => slot.reservations
+  );
+
+  const totalCustomers = allReservations.length;
+
+  const totalChickens = allReservations.reduce(
+    (total, reservation) => total + reservation.quantity,
+    0
+  );
+
+  const collectedCount = allReservations.filter(
+    (reservation) => reservation.status === "collected"
+  ).length;
+
   return (
-    <main className="min-h-screen bg-slate-100 p-10">
+    <main className="min-h-screen bg-slate-100 p-6">
       <div className="mx-auto max-w-5xl">
         <Link
           href={`/admin/flocks/${pickupDay.flockId}`}
-          className="mb-8 inline-block text-green-800 underline"
+          className="mb-6 inline-block text-green-800 underline"
         >
           ← Back to flock
         </Link>
 
-        <div className="mb-8 rounded-xl bg-white p-8 shadow">
-          <h1 className="text-4xl font-bold text-green-900">
-            Pickup Day Collections
+        <div className="mb-6 rounded-2xl bg-white p-8 shadow">
+          <p className="text-sm font-bold uppercase tracking-[0.25em] text-green-900">
+            Woodland Valley Farm
+          </p>
+
+          <h1 className="mt-2 text-4xl font-bold text-green-950">
+            Collection Screen
           </h1>
 
-          <p className="mt-2 text-xl">
+          <p className="mt-3 text-xl text-gray-700">
             {pickupDay.pickupDate.toLocaleDateString("en-AU", {
               weekday: "long",
               day: "numeric",
@@ -52,12 +74,29 @@ export default async function PickupDayPage({
             })}
           </p>
 
-          <p className="mt-2 text-gray-600">{pickupDay.flock.name}</p>
+          <p className="mt-1 text-gray-600">{pickupDay.flock.name}</p>
+
+          <div className="mt-6 grid gap-4 md:grid-cols-3">
+            <div className="rounded-xl bg-green-50 p-5">
+              <p className="text-sm text-gray-600">Customers</p>
+              <p className="text-3xl font-bold">{totalCustomers}</p>
+            </div>
+
+            <div className="rounded-xl bg-green-50 p-5">
+              <p className="text-sm text-gray-600">Chickens Booked</p>
+              <p className="text-3xl font-bold">{totalChickens}</p>
+            </div>
+
+            <div className="rounded-xl bg-green-50 p-5">
+              <p className="text-sm text-gray-600">Collected</p>
+              <p className="text-3xl font-bold">{collectedCount}</p>
+            </div>
+          </div>
         </div>
 
         <div className="space-y-6">
           {pickupDay.timeSlots.map((slot) => (
-            <div key={slot.id} className="rounded-xl bg-white p-6 shadow">
+            <section key={slot.id} className="rounded-2xl bg-white p-6 shadow">
               <h2 className="mb-4 text-2xl font-bold text-green-900">
                 {slot.startTime} – {slot.endTime}
               </h2>
@@ -65,46 +104,60 @@ export default async function PickupDayPage({
               {slot.reservations.length === 0 ? (
                 <p className="text-gray-500">No reservations in this slot.</p>
               ) : (
-                <div className="space-y-3">
-                  {slot.reservations.map((reservation) => (
-                    <div
-                      key={reservation.id}
-                      className="flex items-center justify-between rounded-lg border p-4"
-                    >
-                      <div>
-                        <p className="text-lg font-bold">
-                          {reservation.customerName}
-                        </p>
-                        <p className="text-gray-600">{reservation.mobile}</p>
-                        <p className="font-semibold">
-                          {reservation.quantity} chickens
-                        </p>
-                      </div>
+                <div className="space-y-4">
+                  {slot.reservations.map((reservation) => {
+                    const isCollected = reservation.status === "collected";
 
-                      {reservation.status === "collected" ? (
-                        <span className="rounded bg-green-100 px-4 py-2 font-bold text-green-800">
-                          Collected
-                        </span>
-                      ) : (
-                        <form
-                          action={async () => {
-                            "use server";
-                            await markReservationCollected(
-                              reservation.id,
-                              pickupDay.flockId
-                            );
-                          }}
-                        >
-                          <button className="rounded bg-green-800 px-5 py-3 font-bold text-white hover:bg-green-900">
-                            Collected
-                          </button>
-                        </form>
-                      )}
-                    </div>
-                  ))}
+                    return (
+                      <div
+                        key={reservation.id}
+                        className={`rounded-xl border p-5 ${
+                          isCollected
+                            ? "border-green-200 bg-green-50"
+                            : "bg-white"
+                        }`}
+                      >
+                        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+                          <div>
+                            <p className="text-2xl font-bold">
+                              {reservation.customerName}
+                            </p>
+
+                            <p className="mt-1 text-lg text-gray-700">
+                              {reservation.mobile}
+                            </p>
+
+                            <p className="mt-2 text-2xl font-bold text-green-900">
+                              {reservation.quantity} chickens
+                            </p>
+                          </div>
+
+                          {isCollected ? (
+                            <span className="rounded-xl bg-green-200 px-6 py-4 text-center text-xl font-bold text-green-900">
+                              ✓ Collected
+                            </span>
+                          ) : (
+                            <form
+                              action={async () => {
+                                "use server";
+                                await markReservationCollected(
+                                  reservation.id,
+                                  pickupDay.flockId
+                                );
+                              }}
+                            >
+                              <button className="w-full rounded-xl bg-green-800 px-8 py-5 text-xl font-bold text-white hover:bg-green-900 md:w-auto">
+                                Collect
+                              </button>
+                            </form>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
               )}
-            </div>
+            </section>
           ))}
         </div>
       </div>
