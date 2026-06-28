@@ -12,11 +12,67 @@ export async function createReservation(formData: FormData) {
   const email = String(formData.get("email") || "").trim();
   const quantity = Number(formData.get("quantity"));
 
+  if (!flockId || !pickupDayId || !timeSlotId) {
+    throw new Error("Pickup details are missing.");
+  }
+
   if (!customerName || !mobile || !quantity || quantity < 1) {
     throw new Error("Missing required booking details.");
   }
 
-  await prisma.reservation.create({
+  const flock = await prisma.flock.findUnique({
+    where: { id: flockId },
+    include: {
+      reservations: {
+        where: {
+          status: "reserved",
+        },
+      },
+    },
+  });
+
+  if (!flock) {
+    throw new Error("Flock not found.");
+  }
+
+  const totalReserved = flock.reservations.reduce(
+    (total, reservation) => total + reservation.quantity,
+    0
+  );
+
+  const flockRemaining = flock.totalChickens - totalReserved;
+
+  if (quantity > flockRemaining) {
+    throw new Error("Not enough chickens remaining in this flock.");
+  }
+
+  const slot = await prisma.timeSlot.findUnique({
+    where: { id: timeSlotId },
+    include: {
+      reservations: {
+        where: {
+          status: "reserved",
+        },
+      },
+    },
+  });
+
+  if (!slot) {
+    throw new Error("Pickup time slot not found.");
+  }
+
+  const slotReserved = slot.reservations.reduce(
+    (total, reservation) => total + reservation.quantity,
+    0
+  );
+
+  const slotRemaining = slot.capacity - slotReserved;
+
+  if (quantity > slotRemaining) {
+    throw new Error("Not enough capacity remaining in this pickup time.");
+  }
+
+  const reservation = await prisma.reservation.create({
     data: {
       flockId,
       pickupDayId,
@@ -28,5 +84,5 @@ export async function createReservation(formData: FormData) {
     },
   });
 
-  redirect("/book/confirmed");
+  redirect(`/book/confirmed/${reservation.id}`);
 }

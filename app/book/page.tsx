@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/prisma";
-import { createReservation } from "./actions";
+import BookingForm from "./BookingForm";
 
 export default async function BookPage() {
   const flocks = await prisma.flock.findMany({
@@ -7,7 +7,11 @@ export default async function BookPage() {
       isActive: true,
     },
     include: {
-      reservations: true,
+      reservations: {
+        where: {
+          status: "reserved",
+        },
+      },
       pickupDays: {
         where: {
           isPublished: true,
@@ -19,6 +23,13 @@ export default async function BookPage() {
           timeSlots: {
             orderBy: {
               startTime: "asc",
+            },
+            include: {
+              reservations: {
+                where: {
+                  status: "reserved",
+                },
+              },
             },
           },
         },
@@ -51,6 +62,30 @@ export default async function BookPage() {
 
   const remaining = flock.totalChickens - totalReserved;
 
+  const pickupDays = flock.pickupDays.map((day) => ({
+    id: day.id,
+    label: day.pickupDate.toLocaleDateString("en-AU", {
+      weekday: "long",
+      day: "numeric",
+      month: "long",
+      year: "numeric",
+    }),
+    timeSlots: day.timeSlots.map((slot) => {
+      const slotReserved = slot.reservations.reduce(
+        (total, reservation) => total + reservation.quantity,
+        0
+      );
+
+      return {
+        id: slot.id,
+        startTime: slot.startTime,
+        endTime: slot.endTime,
+        capacity: slot.capacity,
+        remaining: slot.capacity - slotReserved,
+      };
+    }),
+  }));
+
   return (
     <main className="min-h-screen bg-[#f5f3ec] p-6 text-[#243b2a]">
       <div className="mx-auto max-w-3xl rounded-xl bg-white p-8 shadow">
@@ -63,8 +98,7 @@ export default async function BookPage() {
         </h1>
 
         <p className="mb-8 text-gray-700">
-          Choose your pickup day, pickup time and number of chickens. Your
-          reservation will come off the flock availability immediately.
+          Choose your pickup day, pickup time and number of chickens.
         </p>
 
         <div className="mb-8 grid gap-4 rounded-xl bg-green-50 p-5 md:grid-cols-3">
@@ -84,98 +118,11 @@ export default async function BookPage() {
           </div>
         </div>
 
-        <form action={createReservation} className="space-y-6">
-          <input type="hidden" name="flockId" value={flock.id} />
-
-          <div>
-            <label className="mb-2 block font-semibold">Pickup Day</label>
-
-            <select
-              name="pickupDayId"
-              required
-              className="w-full rounded-lg border p-3"
-            >
-              {flock.pickupDays.map((day) => (
-                <option key={day.id} value={day.id}>
-                  {day.pickupDate.toLocaleDateString("en-AU", {
-                    weekday: "long",
-                    day: "numeric",
-                    month: "long",
-                    year: "numeric",
-                  })}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div>
-            <label className="mb-2 block font-semibold">Pickup Time</label>
-
-            <select
-              name="timeSlotId"
-              required
-              className="w-full rounded-lg border p-3"
-            >
-              {flock.pickupDays.flatMap((day) =>
-                day.timeSlots.map((slot) => (
-                  <option key={slot.id} value={slot.id}>
-                    {day.pickupDate.toLocaleDateString("en-AU", {
-                      weekday: "short",
-                      day: "numeric",
-                      month: "short",
-                    })}{" "}
-                    — {slot.startTime}–{slot.endTime}
-                  </option>
-                ))
-              )}
-            </select>
-          </div>
-
-          <div>
-            <label className="mb-2 block font-semibold">Name</label>
-            <input
-              name="customerName"
-              required
-              className="w-full rounded-lg border p-3"
-            />
-          </div>
-
-          <div>
-            <label className="mb-2 block font-semibold">Mobile</label>
-            <input
-              name="mobile"
-              required
-              className="w-full rounded-lg border p-3"
-            />
-          </div>
-
-          <div>
-            <label className="mb-2 block font-semibold">Email optional</label>
-            <input
-              name="email"
-              type="email"
-              className="w-full rounded-lg border p-3"
-            />
-          </div>
-
-          <div>
-            <label className="mb-2 block font-semibold">
-              Number of chickens
-            </label>
-            <input
-              name="quantity"
-              type="number"
-              min="1"
-              max={remaining}
-              required
-              className="w-full rounded-lg border p-3"
-            />
-          </div>
-
-          <button className="w-full rounded-lg bg-green-800 py-4 text-lg font-bold text-white hover:bg-green-900">
-            Reserve My Chickens
-          </button>
-        </form>
+        <BookingForm
+          flockId={flock.id}
+          pickupDays={pickupDays}
+          remaining={remaining}
+        />
       </div>
     </main>
   );
