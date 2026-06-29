@@ -78,55 +78,62 @@ export default async function ManageFlockPage({
 
             <Link
               href={`/admin/flocks/${flock.id}/pickup-days/new`}
-              className="rounded-lg bg-green-800 px-5 py-3 font-bold text-white"
+              className="rounded-lg bg-green-800 px-5 py-3 font-bold text-white hover:bg-green-900"
             >
               + Add Pickup Day
             </Link>
           </div>
 
-          <div className="space-y-4">
-            {flock.pickupDays.map((day) => {
-              const dayReserved = day.reservations.reduce(
-                (total, reservation) => total + reservation.quantity,
-                0
-              );
+          {flock.pickupDays.length === 0 ? (
+            <p className="text-gray-600">No pickup days yet.</p>
+          ) : (
+            <div className="space-y-4">
+              {flock.pickupDays.map((day) => {
+                const dayReserved = day.reservations.reduce(
+                  (total, reservation) => total + reservation.quantity,
+                  0
+                );
 
-              return (
-                <div key={day.id} className="rounded-lg border p-5">
-                  <div className="flex justify-between">
-                    <div>
-                      <h3 className="text-xl font-bold">
-                        {day.pickupDate.toLocaleDateString("en-AU", {
-                          weekday: "long",
-                          day: "numeric",
-                          month: "long",
-                          year: "numeric",
-                        })}
-                      </h3>
+                return (
+                  <div key={day.id} className="rounded-lg border p-5">
+                    <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+                      <div>
+                        <h3 className="text-xl font-bold">
+                          {day.pickupDate.toLocaleDateString("en-AU", {
+                            weekday: "long",
+                            day: "numeric",
+                            month: "long",
+                            year: "numeric",
+                          })}
+                        </h3>
 
-                      <p className="text-gray-600">
-                        {day.startTime} – {day.endTime}
-                      </p>
+                        <p className="text-gray-600">
+                          {day.startTime} – {day.endTime}
+                        </p>
+                      </div>
+
+                      <div className="text-right">
+                        <p className="font-bold">
+                          {dayReserved} chickens reserved
+                        </p>
+
+                        <p className="text-sm text-gray-600">
+                          {day.timeSlots.length} time slots
+                        </p>
+
+                        <Link
+                          href={`/admin/flocks/${flock.id}/pickup-days/${day.id}`}
+                          className="mt-3 inline-block rounded bg-green-800 px-4 py-2 text-sm font-bold text-white hover:bg-green-900"
+                        >
+                          View Collection Screen
+                        </Link>
+                      </div>
                     </div>
-
-                    <div className="text-right">
-                      <p className="font-bold">{dayReserved} chickens reserved</p>
-
-                      <p className="text-sm text-gray-600">
-                        {day.timeSlots.length} time slots
-                      </p>
-                      
- <Link
-  href={`/admin/flocks/${flock.id}/pickup-days/${day.id}`}
-  className="mt-3 inline-block rounded bg-green-800 px-4 py-2 text-sm font-bold text-white hover:bg-green-900"
->
-  View Collection Screen
-</Link>
                   </div>
-                </div>
-              );
-            })}
-          </div>
+                );
+              })}
+            </div>
+          )}
         </div>
 
         <div className="rounded-xl bg-white p-8 shadow">

@@ -1,28 +1,26 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
-import { markReservationCollected } from "../../flocks/[id]/actions";
+import SearchableCollectionList from "./SearchableCollectionList";
 
 export default async function PickupDayPage({
   params,
 }: {
-  params: Promise<{ id: string }>;
+  params: Promise<{ id: string; pickupDayId: string }>;
 }) {
-  const { id } = await params;
-  const pickupDayId = Number(id);
+  const { id, pickupDayId } = await params;
+  const flockId = Number(id);
+  const pickupDayIdNumber = Number(pickupDayId);
 
   const pickupDay = await prisma.pickupDay.findUnique({
-    where: { id: pickupDayId },
+    where: { id: pickupDayIdNumber },
     include: {
       flock: true,
       timeSlots: {
         orderBy: { startTime: "asc" },
         include: {
           reservations: {
-            orderBy: [
-              { status: "asc" },
-              { customerName: "asc" },
-            ],
+            orderBy: [{ status: "asc" }, { customerName: "asc" }],
           },
         },
       },
@@ -50,7 +48,7 @@ export default async function PickupDayPage({
     <main className="min-h-screen bg-slate-100 p-6">
       <div className="mx-auto max-w-5xl">
         <Link
-          href={`/admin/flocks/${pickupDay.flockId}`}
+          href={`/admin/flocks/${flockId}`}
           className="mb-6 inline-block text-green-800 underline"
         >
           ← Back to flock
@@ -94,72 +92,20 @@ export default async function PickupDayPage({
           </div>
         </div>
 
-        <div className="space-y-6">
-          {pickupDay.timeSlots.map((slot) => (
-            <section key={slot.id} className="rounded-2xl bg-white p-6 shadow">
-              <h2 className="mb-4 text-2xl font-bold text-green-900">
-                {slot.startTime} – {slot.endTime}
-              </h2>
-
-              {slot.reservations.length === 0 ? (
-                <p className="text-gray-500">No reservations in this slot.</p>
-              ) : (
-                <div className="space-y-4">
-                  {slot.reservations.map((reservation) => {
-                    const isCollected = reservation.status === "collected";
-
-                    return (
-                      <div
-                        key={reservation.id}
-                        className={`rounded-xl border p-5 ${
-                          isCollected
-                            ? "border-green-200 bg-green-50"
-                            : "bg-white"
-                        }`}
-                      >
-                        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-                          <div>
-                            <p className="text-2xl font-bold">
-                              {reservation.customerName}
-                            </p>
-
-                            <p className="mt-1 text-lg text-gray-700">
-                              {reservation.mobile}
-                            </p>
-
-                            <p className="mt-2 text-2xl font-bold text-green-900">
-                              {reservation.quantity} chickens
-                            </p>
-                          </div>
-
-                          {isCollected ? (
-                            <span className="rounded-xl bg-green-200 px-6 py-4 text-center text-xl font-bold text-green-900">
-                              ✓ Collected
-                            </span>
-                          ) : (
-                            <form
-                              action={async () => {
-                                "use server";
-                                await markReservationCollected(
-                                  reservation.id,
-                                  pickupDay.flockId
-                                );
-                              }}
-                            >
-                              <button className="w-full rounded-xl bg-green-800 px-8 py-5 text-xl font-bold text-white hover:bg-green-900 md:w-auto">
-                                Collect
-                              </button>
-                            </form>
-                          )}
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-            </section>
-          ))}
-        </div>
+        <SearchableCollectionList
+          timeSlots={pickupDay.timeSlots.map((slot) => ({
+            id: slot.id,
+            startTime: slot.startTime,
+            endTime: slot.endTime,
+            reservations: slot.reservations.map((reservation) => ({
+              id: reservation.id,
+              customerName: reservation.customerName,
+              mobile: reservation.mobile,
+              quantity: reservation.quantity,
+              status: reservation.status,
+            })),
+          }))}
+        />
       </div>
     </main>
   );
