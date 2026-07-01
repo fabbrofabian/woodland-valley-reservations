@@ -70,7 +70,9 @@ export default function BookingForm({
               (slot) => slot.remaining > 0
             );
 
-            setSelectedTimeSlotId(firstAvailableSlot?.id);
+            if (firstAvailableSlot?.id !== undefined) {
+              setSelectedTimeSlotId(firstAvailableSlot.id);
+            }
           }}
           className="w-full rounded-lg border p-3"
         >
