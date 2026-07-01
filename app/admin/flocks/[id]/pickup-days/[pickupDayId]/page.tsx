@@ -93,19 +93,21 @@ export default async function PickupDayPage({
         </div>
 
         <SearchableCollectionList
-          timeSlots={pickupDay.timeSlots.map((slot) => ({
-            id: slot.id,
-            startTime: slot.startTime,
-            endTime: slot.endTime,
-            reservations: slot.reservations.map((reservation) => ({
-              id: reservation.id,
-              customerName: reservation.customerName,
-              mobile: reservation.mobile,
-              quantity: reservation.quantity,
-              status: reservation.status,
-            })),
-          }))}
-        />
+  flockId={flockId}
+  pickupDayId={pickupDayIdNumber}
+  timeSlots={pickupDay.timeSlots.map((slot) => ({
+    id: slot.id,
+    startTime: slot.startTime,
+    endTime: slot.endTime,
+    reservations: slot.reservations.map((reservation) => ({
+      id: reservation.id,
+      customerName: reservation.customerName,
+      mobile: reservation.mobile,
+      quantity: reservation.quantity,
+      status: reservation.status,
+    })),
+  }))}
+/>
       </div>
     </main>
   );

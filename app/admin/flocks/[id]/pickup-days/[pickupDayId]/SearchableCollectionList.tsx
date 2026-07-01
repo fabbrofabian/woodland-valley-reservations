@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { markReservationCollected } from "../../actions";
 
 type Reservation = {
   id: number;
@@ -18,8 +19,12 @@ type TimeSlot = {
 };
 
 export default function SearchableCollectionList({
+  flockId,
+  pickupDayId,
   timeSlots,
 }: {
+  flockId: number;
+  pickupDayId: number;
   timeSlots: TimeSlot[];
 }) {
   const [search, setSearch] = useState("");
@@ -103,7 +108,15 @@ export default function SearchableCollectionList({
                             ✓ Collected
                           </span>
                         ) : (
-                          <form action={`/admin/reservations/${reservation.id}/collect`}>
+                          <form
+                            action={async () => {
+                              await markReservationCollected(
+                                reservation.id,
+                                flockId,
+                                pickupDayId
+                              );
+                            }}
+                          >
                             <button className="w-full rounded-xl bg-green-800 px-8 py-5 text-xl font-bold text-white hover:bg-green-900 md:w-auto">
                               Collect
                             </button>
