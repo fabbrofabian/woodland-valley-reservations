@@ -37,8 +37,8 @@ export default function BookingForm({
   const availableSlots =
     selectedPickupDay?.timeSlots.filter((slot) => slot.remaining > 0) ?? [];
 
-  const [selectedTimeSlotId, setSelectedTimeSlotId] = useState(
-    availableSlots[0]?.id
+  const [selectedTimeSlotId, setSelectedTimeSlotId] = useState<number | undefined>(
+  availableSlots[0]?.id
   );
 
   const selectedTimeSlot = selectedPickupDay?.timeSlots.find(

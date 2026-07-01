@@ -1,4 +1,5 @@
 import Image from "next/image";
+import Link from "next/link";
 
 export default function Home() {
   return (
@@ -33,20 +34,23 @@ export default function Home() {
           </h1>
 
           <p className="mb-8 max-w-2xl text-lg leading-8">
-            Choose your pickup day, reserve your time slot, and know your
-            chickens are waiting for you.
+            Choose your pickup day, select your preferred collection time, and
+            reserve the number of chickens you need.
           </p>
 
-          <button className="rounded-full bg-[#e9c46a] px-8 py-4 text-lg font-bold text-[#243b2a] shadow-lg">
+          <Link
+            href="/book"
+            className="rounded-full bg-[#e9c46a] px-8 py-4 text-lg font-bold text-[#243b2a] shadow-lg"
+          >
             Reserve Chickens
-          </button>
+          </Link>
         </div>
       </section>
 
       <section className="mx-auto grid max-w-6xl gap-8 px-6 py-16 md:grid-cols-3">
         <div>
           <h2 className="mb-3 text-2xl font-bold">Guaranteed availability</h2>
-          <p>No more guessing from Facebook comments. Reserve before you arrive.</p>
+          <p>Reserve your chickens before you arrive and avoid missing out.</p>
         </div>
 
         <div>
