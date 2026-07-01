@@ -19,3 +19,14 @@ export async function markReservationCollected(
     revalidatePath(`/admin/flocks/${flockId}/pickup-days/${pickupDayId}`);
   }
 }
+
+export async function setFlockActive(flockId: number, isActive: boolean) {
+  await prisma.flock.update({
+    where: { id: flockId },
+    data: { isActive },
+  });
+
+  revalidatePath("/admin");
+  revalidatePath(`/admin/flocks/${flockId}`);
+  revalidatePath("/book");
+}
